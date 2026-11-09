@@ -1,14 +1,15 @@
 // components/IncomeModal.jsx
 import React, { useState } from 'react'
-import { X } from 'lucide-react'
-import { KANTONG } from '../hooks/useStore.js'
+import { X, SlidersHorizontal } from 'lucide-react'
+import { getKantongList, DEFAULT_ALLOCATIONS } from '../hooks/useStore.js'
 import { formatRupiah } from '../utils/format.js'
 
-export default function IncomeModal({ onClose, onSubmit }) {
+export default function IncomeModal({ allocations = DEFAULT_ALLOCATIONS, onClose, onSubmit, onOpenAllocationSettings }) {
   const [amount, setAmount] = useState('')
   const [desc,   setDesc]   = useState('')
 
   const parsed = parseFloat(amount.replace(/\D/g, '')) || 0
+  const kantongList = getKantongList(allocations)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -30,6 +31,7 @@ export default function IncomeModal({ onClose, onSubmit }) {
           <h2 className="modal-title" style={{ marginBottom: 0 }}>Tambah Pemasukan</h2>
           <button
             onClick={onClose}
+            aria-label="Tutup"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}
           >
             <X size={20} />
@@ -62,17 +64,41 @@ export default function IncomeModal({ onClose, onSubmit }) {
             />
           </div>
 
-          {/* Auto-split preview */}
+          {/* Auto-split preview based on active custom allocations */}
           {parsed > 0 && (
             <div className="form-group">
-              <label className="form-label">Pembagian Otomatis</label>
+              <div className="row-between" style={{ marginBottom: 6 }}>
+                <label className="form-label" style={{ margin: 0 }}>Pembagian Otomatis (Alokasi Kustom)</label>
+                {onOpenAllocationSettings && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose()
+                      onOpenAllocationSettings()
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-1)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <SlidersHorizontal size={11} /> Ubah %
+                  </button>
+                )}
+              </div>
               <div className="split-preview">
-                {KANTONG.map(k => (
+                {kantongList.map(k => (
                   <div key={k.id} className="split-row">
                     <div className="split-dot" style={{ background: k.color }} />
                     <span className="split-name">{k.label}</span>
                     <span className="split-pct">{k.pct}%</span>
-                    <span className="split-val">{formatRupiah(parsed * k.pct / 100)}</span>
+                    <span className="split-val">{formatRupiah((parsed * k.pct) / 100)}</span>
                   </div>
                 ))}
               </div>

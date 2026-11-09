@@ -1,18 +1,19 @@
 // components/ExpenseModal.jsx
 import React, { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
-import { KANTONG, computeBalances } from '../hooks/useStore.js'
+import { getKantongList, computeBalances, DEFAULT_ALLOCATIONS } from '../hooks/useStore.js'
 import { formatRupiah } from '../utils/format.js'
 
-export default function ExpenseModal({ transactions, onClose, onSubmit }) {
+export default function ExpenseModal({ transactions, allocations = DEFAULT_ALLOCATIONS, onClose, onSubmit }) {
+  const kantongList = getKantongList(allocations)
   const [amount,  setAmount]  = useState('')
   const [desc,    setDesc]    = useState('')
-  const [kantong, setKantong] = useState(KANTONG[0].id)
+  const [kantong, setKantong] = useState(kantongList[0]?.id || 'pokok')
 
-  const balances = computeBalances(transactions)
+  const balances = computeBalances(transactions, allocations)
   const parsed   = parseFloat(amount.replace(/\D/g, '')) || 0
-  const selected = KANTONG.find(k => k.id === kantong)
-  const remaining = balances[kantong]
+  const selected = kantongList.find(k => k.id === kantong)
+  const remaining = balances[kantong] ?? 0
   const willBeMinus = parsed > 0 && (remaining - parsed < 0)
 
   function handleSubmit(e) {
@@ -35,6 +36,7 @@ export default function ExpenseModal({ transactions, onClose, onSubmit }) {
           <h2 className="modal-title" style={{ marginBottom: 0 }}>Tambah Pengeluaran</h2>
           <button
             onClick={onClose}
+            aria-label="Tutup"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}
           >
             <X size={20} />
@@ -44,9 +46,9 @@ export default function ExpenseModal({ transactions, onClose, onSubmit }) {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Kantong selector */}
           <div className="form-group">
-            <label className="form-label">Dari Kantong</label>
+            <label className="form-label">Pilih Kantong Saldo</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {KANTONG.map(k => (
+              {kantongList.map(k => (
                 <button
                   key={k.id}
                   type="button"
@@ -66,9 +68,14 @@ export default function ExpenseModal({ transactions, onClose, onSubmit }) {
                     transition: 'all .15s',
                   }}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 700, color: k.color, letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                    {k.label}
-                  </span>
+                  <div className="row-between">
+                    <span style={{ fontSize: 11, fontWeight: 700, color: k.color, letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                      {k.label}
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600 }}>
+                      {k.pct}%
+                    </span>
+                  </div>
                   <span style={{
                     fontSize: 13,
                     fontWeight: 700,

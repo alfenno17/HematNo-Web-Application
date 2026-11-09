@@ -1,10 +1,10 @@
 // components/Dashboard.jsx
 import React from 'react'
 import {
-  TrendingUp, TrendingDown, AlertTriangle, Wallet, ArrowRight, ShieldCheck,
+  TrendingUp, TrendingDown, AlertTriangle, Wallet, ArrowRight, ShieldCheck, SlidersHorizontal,
 } from 'lucide-react'
-import { KANTONG, computeBalances, totalBalance, spentInRange } from '../hooks/useStore.js'
-import { formatRupiah, formatDate, formatTime, startOfDay, startOfWeek, startOfMonth, endOfDay } from '../utils/format.js'
+import { getKantongList, computeBalances, totalBalance, spentInRange, KANTONG_META, DEFAULT_ALLOCATIONS } from '../hooks/useStore.js'
+import { formatRupiah, formatDate, startOfDay, startOfWeek, startOfMonth, endOfDay } from '../utils/format.js'
 
 function KantongCard({ k, balance }) {
   const isNegative = balance < 0
@@ -24,7 +24,7 @@ function KantongCard({ k, balance }) {
         <div className="kantong-bar-track">
           <div
             className="kantong-bar-fill"
-            style={{ width: '100%', background: k.color, opacity: 0.35 }}
+            style={{ width: `${Math.max(k.pct, 5)}%`, background: k.color, opacity: 0.35 }}
           />
         </div>
       )}
@@ -32,8 +32,17 @@ function KantongCard({ k, balance }) {
   )
 }
 
-export default function Dashboard({ transactions, limits, onAddIncome, onAddExpense, onNavigateTab }) {
-  const balances = computeBalances(transactions)
+export default function Dashboard({
+  transactions,
+  limits,
+  allocations = DEFAULT_ALLOCATIONS,
+  onAddIncome,
+  onAddExpense,
+  onNavigateTab,
+  onOpenAllocationSettings,
+}) {
+  const kantongList = getKantongList(allocations)
+  const balances = computeBalances(transactions, allocations)
   const total    = totalBalance(balances)
   const recent   = transactions.slice(0, 5)
   const today    = new Date()
@@ -79,14 +88,37 @@ export default function Dashboard({ transactions, limits, onAddIncome, onAddExpe
         </button>
       </div>
 
-      {/* 4 Kantong */}
+      {/* 4 Kantong with Custom Allocation Action */}
       <div>
         <div className="row-between" style={{ marginBottom: 8 }}>
-          <p className="section-title" style={{ margin: 0 }}>4 Kantong Saldo (Otomatis)</p>
-          <span className="text-xs text-muted">50% · 30% · 10% · 10%</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <p className="section-title" style={{ margin: 0 }}>4 Kantong Saldo</p>
+          </div>
+          {onOpenAllocationSettings && (
+            <button
+              onClick={onOpenAllocationSettings}
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-1)',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '4px 8px',
+              }}
+              title="Atur persentase alokasi kustom"
+            >
+              <SlidersHorizontal size={12} />
+              <span>Atur Alokasi ({allocations.pokok}%·{allocations.hiburan}%·{allocations.tabungan}%·{allocations.darurat}%)</span>
+            </button>
+          )}
         </div>
         <div className="kantong-grid">
-          {KANTONG.map(k => (
+          {kantongList.map(k => (
             <KantongCard key={k.id} k={k} balance={balances[k.id]} />
           ))}
         </div>
@@ -206,7 +238,7 @@ export default function Dashboard({ transactions, limits, onAddIncome, onAddExpe
 
 function TxRow({ tx }) {
   const isIncome = tx.type === 'income'
-  const kantong  = KANTONG.find(k => k.id === tx.kantong)
+  const kantong  = KANTONG_META.find(k => k.id === tx.kantong)
   return (
     <div className="tx-item">
       <div
@@ -229,6 +261,12 @@ function TxRow({ tx }) {
             <>
               <span>·</span>
               <span style={{ color: kantong.color, fontWeight: 600 }}>{kantong.label}</span>
+            </>
+          )}
+          {isIncome && tx.allocations && (
+            <>
+              <span>·</span>
+              <span>Alokasi ({tx.allocations.pokok}/{tx.allocations.hiburan}/{tx.allocations.tabungan}/{tx.allocations.darurat})</span>
             </>
           )}
         </div>

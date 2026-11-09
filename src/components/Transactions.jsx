@@ -1,7 +1,7 @@
 // components/Transactions.jsx
 import React, { useState } from 'react'
 import { Trash2, TrendingUp, TrendingDown, Search } from 'lucide-react'
-import { KANTONG } from '../hooks/useStore.js'
+import { KANTONG_META } from '../hooks/useStore.js'
 import { formatRupiah, formatDate, formatTime } from '../utils/format.js'
 
 export default function Transactions({ transactions, onDelete }) {
@@ -67,15 +67,15 @@ export default function Transactions({ transactions, onDelete }) {
       ) : (
         <div className="tx-list">
           {filtered.map(tx => {
-            const kantong = KANTONG.find(k => k.id === tx.kantong)
+            const kantong = KANTONG_META.find(k => k.id === tx.kantong)
             const isIncome = tx.type === 'income'
             return (
               <div key={tx.id} className="tx-item">
                 <div
                   className="tx-icon"
                   style={{
-                    background: isIncome ? '#dcfce7' : '#f4f4f1',
-                    color:      isIncome ? '#16a34a' : '#4a4a47',
+                    background: isIncome ? '#f0fdf4' : '#fef2f2',
+                    color:      isIncome ? '#16a34a' : '#dc2626',
                   }}
                 >
                   {isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -91,11 +91,17 @@ export default function Transactions({ transactions, onDelete }) {
                         <span style={{ color: kantong.color, fontWeight: 600 }}>{kantong.label}</span>
                       </>
                     )}
+                    {isIncome && tx.allocations && (
+                      <>
+                        <span>·</span>
+                        <span>Alokasi ({tx.allocations.pokok}/{tx.allocations.hiburan}/{tx.allocations.tabungan}/{tx.allocations.darurat}%)</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <div className={`tx-amount ${isIncome ? 'income' : 'expense'}`}>
-                    {isIncome ? '+' : '-'}{formatRupiah(tx.amount, true)}
+                    {isIncome ? '+' : '-'}{formatRupiah(tx.amount)}
                   </div>
                   <button
                     className="tx-delete"
@@ -123,13 +129,13 @@ function StatsSummary({ transactions }) {
       <div className="card card-sm" style={{ borderLeft: '3px solid #16a34a' }}>
         <div className="text-xs text-muted">Total Pemasukan</div>
         <div className="font-bold" style={{ fontSize: 15, color: '#16a34a', marginTop: 2 }}>
-          +{formatRupiah(totalIn, true)}
+          +{formatRupiah(totalIn)}
         </div>
       </div>
       <div className="card card-sm" style={{ borderLeft: '3px solid var(--text-3)' }}>
         <div className="text-xs text-muted">Total Pengeluaran</div>
         <div className="font-bold" style={{ fontSize: 15, marginTop: 2 }}>
-          -{formatRupiah(totalOut, true)}
+          -{formatRupiah(totalOut)}
         </div>
       </div>
     </div>
